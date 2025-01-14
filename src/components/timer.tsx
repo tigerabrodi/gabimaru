@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button'
-import { HOUR_IN_SECONDS, MINUTE_IN_SECONDS } from '@/lib/constants'
 import {
   getSoundEffectManager,
   SOUND_EFFECTS,
@@ -9,11 +8,16 @@ import { Pause, Play, Repeat, RotateCcw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 const MAX_DIGITS = 6
-
 const FULL_PROGRESS = 100
 const PROGRESS_TO_PERCENTAGE = 100
-
 const CIRCLE_RADIUS = 45
+
+const SECOND_IN_SECONDS = 1
+const TENS_OF_SECONDS_IN_SECONDS = 10
+const MINUTE_IN_SECONDS = 60
+const TENS_OF_MINUTES_IN_SECONDS = MINUTE_IN_SECONDS * 10 // 600
+const HOUR_IN_SECONDS = MINUTE_IN_SECONDS * 60 // 3600
+const TENS_OF_HOURS_IN_SECONDS = HOUR_IN_SECONDS * 10 // 36000
 
 type TimerState = 'idle' | 'running' | 'paused' | 'editing' | 'finished'
 
@@ -84,30 +88,40 @@ export function Timer() {
   useEffect(() => {
     if (digits.length > 0) {
       let seconds = 0
-      const digitsCopy = [...digits] // Create a copy since we'll pop
+      const digitsCopy = [...digits]
 
-      // For each digit, we multiply it depending on its position
-      // Each digit marked with x
-      // We pop and keep checking length
-      // If more exists, we just continue
+      // hh:mm:ss format with x showing digit position
+      // Everything is in seconds here
+      // First digit is single seconds        hh:mm:s{x}  = 1
+      // Second digit is tens of seconds      hh:mm:{x}s  = 10
+      // Third digit is single minutes        hh:m{x}:ss  = 60
+      // Fourth digit is tens of minutes      hh:{x}m:ss  = 600
+      // Fifth digit is single hours          h{x}:mm:ss  = 3600
+      // Sixth digit is tens of hours         {x}h:mm:ss  = 36000
 
-      // First digit is single seconds hh:mm:s{x}
-      if (digitsCopy.length >= 1) seconds += digitsCopy.pop()!
+      if (digitsCopy.length >= 1) {
+        seconds += digitsCopy.pop()! * SECOND_IN_SECONDS
+      }
 
-      // Second digit is tens of seconds hh:mm:{x}s
-      if (digitsCopy.length >= 1) seconds += digitsCopy.pop()! * 10
+      if (digitsCopy.length >= 1) {
+        seconds += digitsCopy.pop()! * TENS_OF_SECONDS_IN_SECONDS
+      }
 
-      // Third digit is single minutes hh:m{x}:ss
-      if (digitsCopy.length >= 1) seconds += digitsCopy.pop()! * 60
+      if (digitsCopy.length >= 1) {
+        seconds += digitsCopy.pop()! * MINUTE_IN_SECONDS
+      }
 
-      // Fourth digit is tens of minutes hh:{x}m:ss
-      if (digitsCopy.length >= 1) seconds += digitsCopy.pop()! * 600
+      if (digitsCopy.length >= 1) {
+        seconds += digitsCopy.pop()! * TENS_OF_MINUTES_IN_SECONDS
+      }
 
-      // Fifth digit is single hours h{x}:mm:ss
-      if (digitsCopy.length >= 1) seconds += digitsCopy.pop()! * 3.86
+      if (digitsCopy.length >= 1) {
+        seconds += digitsCopy.pop()! * HOUR_IN_SECONDS
+      }
 
-      // Sixth digit is tens of hours {x}h:mm:ss
-      if (digitsCopy.length >= 1) seconds += digitsCopy.pop()! * 36000
+      if (digitsCopy.length >= 1) {
+        seconds += digitsCopy.pop()! * TENS_OF_HOURS_IN_SECONDS
+      }
 
       setTotalSeconds(seconds)
     }
@@ -204,8 +218,8 @@ export function Timer() {
     // Started again - The real elapsed time is not when you resumed
     // But it's all time that already passed before, no matter how many times you paused/resumed
     // So we subtract the elapsed time from the remaining time
-    // PS. remainingTimeRef is only updated when we pause
-    // If we didn't support pause/resume remainingTimeRef would not be needed at all
+    // PS. baseRemainingTimeRef is only updated when we pause
+    // If we didn't support pause/resume baseRemainingTimeRef would NOT BE NEEDED at all
     const actualRemainingSecondsForTimer = Math.max(
       0,
       baseRemainingTimeRef.current - elapsedSecondsFromNow
