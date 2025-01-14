@@ -333,6 +333,11 @@ export function Timer() {
         }
       }}
     >
+      <title>
+        {state === 'running'
+          ? formatIdleTime(totalSeconds)
+          : 'Gabimaru - Google Timer built in React'}
+      </title>
       <div className="size-72">
         <svg
           viewBox="0 0 100 100"
