@@ -1,3 +1,6 @@
+
+https://github.com/user-attachments/assets/679df5c0-d331-4959-ab82-54ee1998bc75
+
 <div align="center">
 <h1 align="center">
   <a href="https://narumory.com">Gabimaru</a>
