@@ -1,5 +1,4 @@
 import { Stopwatch } from '@/components/stopwatch'
-// import { Timer } from "@/components/timer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Clock as ClockIcon, Timer as TimerIcon } from 'lucide-react'
 import { Timer } from './components/timer'
