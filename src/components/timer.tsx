@@ -1,7 +1,11 @@
 import { Button } from '@/components/ui/button'
 import { HOUR_IN_SECONDS, MINUTE_IN_SECONDS } from '@/lib/constants'
+import {
+  getSoundEffectManager,
+  SOUND_EFFECTS,
+} from '@/lib/sound-effect-manager'
 import { convertMsToSeconds, getDifferenceInMs } from '@/lib/utils'
-import { Pause, Play, RotateCcw } from 'lucide-react'
+import { Pause, Play, Repeat, RotateCcw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 const MAX_DIGITS = 6
@@ -11,7 +15,15 @@ const PROGRESS_TO_PERCENTAGE = 100
 
 const CIRCLE_RADIUS = 45
 
-type TimerState = 'idle' | 'running' | 'paused' | 'editing'
+type TimerState = 'idle' | 'running' | 'paused' | 'editing' | 'finished'
+
+const TIMER_STATE_TO_ICON_MAP: Record<TimerState, React.ReactNode> = {
+  idle: <Play size={20} />,
+  running: <Pause size={20} />,
+  paused: <Play size={20} />,
+  editing: <Play size={20} />,
+  finished: <Repeat size={20} />,
+}
 
 function getDiameterByRadius(radius: number) {
   return radius * 2
@@ -27,7 +39,6 @@ export function Timer() {
   const [state, setState] = useState<TimerState>('idle')
 
   /* Refs */
-
   // From the time you started the timer
   // Date.now() - startTimeRef.current is the time elapsed since start
   // However, if you've paused and resumed, it's not the full time elapsed
@@ -146,6 +157,11 @@ export function Timer() {
   }
 
   const handleCircleClick = () => {
+    if (state === 'finished') {
+      resetTimer()
+      return
+    }
+
     if (state === 'running' || state === 'paused') {
       toggleTimer()
       return
@@ -161,7 +177,10 @@ export function Timer() {
   }
 
   const handleStop = () => {
-    setState('idle')
+    const soundEffectManager = getSoundEffectManager()
+    soundEffectManager.play({ type: SOUND_EFFECTS.ALARM, shouldLoop: true })
+
+    setState('finished')
     startTimeRef.current = null
     baseRemainingTimeRef.current = null
     setTotalSeconds(0)
@@ -243,6 +262,11 @@ export function Timer() {
   }
 
   const toggleTimer = () => {
+    if (state === 'finished') {
+      resetTimer()
+      return
+    }
+
     if (state === 'running') {
       handlePause()
     } else {
@@ -260,6 +284,9 @@ export function Timer() {
       cancelAnimationFrame(requestAnimationUpdateRef.current)
     }
 
+    const soundEffectManager = getSoundEffectManager()
+    soundEffectManager.stop({ type: SOUND_EFFECTS.ALARM })
+
     setState('idle')
     setProgress(0)
     startTimeRef.current = null
@@ -275,6 +302,8 @@ export function Timer() {
         cancelAnimationFrame(requestAnimationUpdateRef.current)
     }
   }, [])
+
+  const isButtonDisabled = totalSeconds === 0 && state !== 'finished'
 
   return (
     <div
@@ -367,9 +396,9 @@ export function Timer() {
         <Button
           onClick={toggleTimer}
           className="px-16 py-6"
-          disabled={totalSeconds === 0}
+          disabled={isButtonDisabled}
         >
-          {state === 'running' ? <Pause size={20} /> : <Play size={20} />}
+          {TIMER_STATE_TO_ICON_MAP[state]}
         </Button>
         <Button onClick={resetTimer} className="size-12" variant="outline">
           <RotateCcw size={20} />
